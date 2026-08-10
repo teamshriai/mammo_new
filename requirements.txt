@@ -1,0 +1,18 @@
+# OncoServe MIRAI — Windows local dependencies
+# Install with:  pip install -r requirements.txt
+
+torch==2.0.1+cpu
+torchvision==0.15.2+cpu
+flask>=2.3
+pydicom>=2.3
+numpy<2
+Pillow>=9.0
+scipy>=1.7
+scikit-learn>=1.0
+lifelines>=0.27
+statsmodels>=0.13
+scikit-image>=0.19
+imageio>=2.22
+tqdm>=4.64
+p_tqdm
+--extra-index-url https://download.pytorch.org/whl/cpu
