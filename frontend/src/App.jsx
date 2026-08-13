@@ -322,8 +322,7 @@ function App() {
             setModalTitle('Converting DICOMs to PNG');
             setModalSub('Processing 4 mammography views...');
             await animateProgress([55], 7000, setProgressPct, stoppedOrCancelled);
-            if (stoppedOrCancelled()) return;
-            setModalTitle('Running the MIRAI model');
+                  setModalTitle('Running AI inference model');
             setModalSub(patientName ? `Analyzing ${patientName}'s mammography images` : 'Analyzing mammography images...');
             await animateProgress([88], 220000, setProgressPct, stoppedOrCancelled);
             if (stoppedOrCancelled()) return;
@@ -365,7 +364,7 @@ function App() {
             setModalSub('Processing 4 mammography views...');
             await animateProgress([48], 7000, setProgressPct, stoppedOrCancelled);
             if (stoppedOrCancelled()) return;
-            setModalTitle('Running the MIRAI model');
+            setModalTitle('Running AI inference model');
             setModalSub(patientName ? `Analyzing ${patientName}'s mammography images` : 'Analyzing mammography images...');
             await animateProgress([88], 220000, setProgressPct, stoppedOrCancelled);
             if (stoppedOrCancelled()) return;
@@ -444,8 +443,10 @@ function App() {
     }
   }
 
+  const folderName = mode === 'remote' ? selectedRemoteFolder : getFolderName(folderFiles);
+  const displayName = patientName.trim() || folderName || '';
   const pageTitle = resultsActive
-    ? `OncoTraceAI 1–5 Year Risk for ${patientName || 'Patient'}`
+    ? `OncoTraceAI 1–5 Year Cancer Risk Prediction${displayName ? ` for ${displayName}` : ''}`
     : 'OncoTraceAI 1–5 Year Cancer Risk Prediction';
   const perYear = latestPrediction
     ? [latestPrediction.year_1 || 0, latestPrediction.year_2 || 0, latestPrediction.year_3 || 0, latestPrediction.year_4 || 0, latestPrediction.year_5 || 0]
@@ -498,13 +499,13 @@ function App() {
           {/* ── UPLOAD SECTION ── */}
           {!resultsActive && (
             <div id="uploadSection" style={{ position: 'relative' }}>
-              {(folderFiles.length > 0 && mode === 'local') && (
+              {(folderFiles.length > 0 || selectedRemoteFolder || inferenceError || fileStatusError) && (
                 <button 
                   type="button" 
-                  onClick={() => { setFolderFiles([]); setSelectedRemoteFolder(''); setFileStatusError(null); setInferenceError(null); }}
-                  style={{ position: 'absolute', top: '-10px', right: '0px', background: '#f59e0b', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
+                  onClick={resetToUpload}
+                  style={{ position: 'absolute', top: '-10px', right: '0px', background: '#3b82f6', color: '#fff', border: 'none', padding: '0.4rem 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                 >
-                  &lt; Back
+                  <span>↻</span> New Exam
                 </button>
               )}
               {/* Patient row */}
