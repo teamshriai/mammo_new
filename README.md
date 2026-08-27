@@ -1,6 +1,6 @@
 # OncoTraceAI — Mammography 1–5 Year Cancer Risk Prediction
 
-**Production URL**: [https://oncotraceai.org/mammodemo/](https://oncotraceai.org/mammodemo/)  
+**Production URL**: [https://www.oncotrace-ai.org/mammodemo/](https://www.oncotrace-ai.org/mammodemo/) *(legacy `oncotraceai.org` 301-redirects here)*  
 **Server Host**: `thulasi@52.89.98.162`  
 **GitHub Repository**: [https://github.com/teamshriai/mammo_new](https://github.com/teamshriai/mammo_new)  
 **Local Project Path**: `~/Mirai_backup/Mirai`  

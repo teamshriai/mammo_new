@@ -460,7 +460,9 @@ function App() {
       <header>
         <div className="header-inner">
           <div className="logo-box">
-            <img src={`${import.meta.env.BASE_URL}oncotraceai.webp`} alt="OncoTraceAI logo" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
+            <a href="https://www.oncotrace-ai.org" aria-label="OncoTrace-AI home">
+              <img src={`${import.meta.env.BASE_URL}oncotraceai.webp`} alt="OncoTraceAI logo" style={{ height: '70px', width: 'auto', objectFit: 'contain' }} />
+            </a>
           </div>
           <div className="header-title">
             <h1>{pageTitle}</h1>
