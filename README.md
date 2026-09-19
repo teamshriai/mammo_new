@@ -168,6 +168,8 @@ curl http://127.0.0.1:5009/health
   ExecStart=/usr/local/bin/gunicorn -w 1 -b 127.0.0.1:5009 --timeout 600 wsgi:app
   Environment="OMP_NUM_THREADS=4"
   Environment="MKL_NUM_THREADS=4"
+  Environment="MAMMO_DEMO_USERNAME=<set-this>"
+  Environment="MAMMO_DEMO_PASSWORD=<set-this>"
   Restart=always
 
   [Install]
@@ -175,3 +177,41 @@ curl http://127.0.0.1:5009/health
   ```
 - **Nginx Site Config**: `/etc/nginx/sites-enabled/oncotraceai.org`
 - **Main Nginx Config**: `/etc/nginx/nginx.conf` (`client_max_body_size 500M;`)
+
+---
+
+## 🔒 Demo Access Gate
+
+The demo is invite-only, gated by a shared username/password (`MammoAuthGate`,
+see `MAMMO_AUTH_GATE_INTEGRATION.md`). Two layers make this real access
+control rather than decoration:
+
+1. **Frontend** (`frontend/src/MammoAuthGate.jsx`, wired into
+   `frontend/src/main.jsx`) — shows a login screen before the app mounts.
+   Nothing is persisted (no localStorage/cookies), so a refresh or a direct
+   hit on `/mammodemo/ui` always re-prompts.
+2. **Backend** (`scripts/app.py`) — `POST /auth/verify` checks HTTP Basic
+   credentials against `MAMMO_DEMO_USERNAME` / `MAMMO_DEMO_PASSWORD`, and the
+   same check now guards `/predict`, `/predict-remote`, `/predict-synthetic`,
+   `/list-remote-folders`, `/preview-remote-folder`, and `/serve`. If either
+   env var is unset, those routes fail closed with `503` instead of silently
+   serving everyone.
+
+**To enable on the production server:**
+
+1. Add `MAMMO_DEMO_USERNAME` / `MAMMO_DEMO_PASSWORD` to
+   `/etc/systemd/system/oncotrace-mammo.service` (see above), then
+   `sudo systemctl daemon-reload && sudo systemctl restart oncotrace-mammo`.
+2. Make sure Nginx proxies `/mammodemo/auth/verify` to the Flask backend the
+   same way it already proxies `/mammodemo/predict` etc. (strip the
+   `/mammodemo` prefix before forwarding to `127.0.0.1:5009/auth/verify`).
+   Without this, the login screen will show "Can't reach the sign-in service."
+3. Rebuild and redeploy the frontend (`npm run build` in `frontend/`, then
+   follow the standard deployment steps above) so the built bundle includes
+   the gate.
+
+**Verify:**
+```bash
+curl -i -X POST https://www.oncotrace-ai.org/mammodemo/auth/verify   # no creds -> 401, no WWW-Authenticate header
+curl -X POST https://www.oncotrace-ai.org/mammodemo/predict          # no creds -> 401
+```

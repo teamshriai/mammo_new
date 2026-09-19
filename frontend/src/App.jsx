@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Chart from 'chart.js/auto';
+import { authHeader, authedFetch } from './MammoAuthGate';
 
 const NEEDED = [
   { key: 'LCC',  label: 'l-cc.dcm',  api: 'l_cc',  display: 'Left CC' },
@@ -211,6 +212,7 @@ function App() {
   function buildAuthHeaders(extra) {
     const headers = extra ? { ...extra } : {};
     if (apiKeyRef.current) headers['X-API-Key'] = apiKeyRef.current;
+    Object.assign(headers, authHeader());
     return headers;
   }
 
@@ -235,7 +237,7 @@ function App() {
   async function loadRemoteFolders() {
     setRemoteCountText('Connecting to server...');
     try {
-      const response = await fetch(getApiUrl('/list-remote-folders'), { headers: buildAuthHeaders() });
+      const response = await authedFetch(getApiUrl('/list-remote-folders'), { headers: buildAuthHeaders() });
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await parseJsonResponse(response, '/list-remote-folders');
       const folders = data.folders || [];
@@ -258,7 +260,7 @@ function App() {
     setInferenceError(null);
     if (!folderName) return;
     try {
-      const response = await fetch(getApiUrl('/preview-remote-folder'), {
+      const response = await authedFetch(getApiUrl('/preview-remote-folder'), {
         method: 'POST',
         headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ folder_name: folderName }),
@@ -332,7 +334,7 @@ function App() {
           } catch (e) { /* swallow cancellation */ }
         })();
 
-        const response = await fetch(getApiUrl('/predict-remote'), {
+        const response = await authedFetch(getApiUrl('/predict-remote'), {
           method: 'POST',
           headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ folder_name: selectedRemoteFolder }),
@@ -374,7 +376,7 @@ function App() {
           } catch (e) { /* swallow cancellation */ }
         })();
 
-        const response = await fetch(getApiUrl('/predict'), {
+        const response = await authedFetch(getApiUrl('/predict'), {
           method: 'POST',
           body: formData,
           headers: buildAuthHeaders(),

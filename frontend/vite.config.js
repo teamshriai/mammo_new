@@ -11,6 +11,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      '/mammodemo/auth/verify': {
+        target: 'http://127.0.0.1:5009',
+        rewrite: (path) => path.replace(/^\/mammodemo/, ''),
+      },
       '/mammodemo/predict': {
         target: 'http://127.0.0.1:5009',
         rewrite: (path) => path.replace(/^\/mammodemo/, ''),
@@ -31,6 +35,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:5009',
         rewrite: (path) => path.replace(/^\/mammodemo/, ''),
       },
+      '/auth/verify': 'http://127.0.0.1:5009',
       '/predict': 'http://127.0.0.1:5009',
       '/health': 'http://127.0.0.1:5009',
       '/static': 'http://127.0.0.1:5009',

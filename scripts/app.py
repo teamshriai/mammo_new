@@ -2,6 +2,8 @@ import os, shutil
 from os.path import dirname, realpath
 import sys
 import base64
+import binascii
+import secrets
 from io import BytesIO
 import numpy as np
 import torch
@@ -53,6 +55,49 @@ app.config.from_object(CONFIG_NAME)
 # Deployment controls (optional)
 REMOTE_ENABLED = os.environ.get('REMOTE_ENABLED', '1').lower() in ('1', 'true', 'yes')
 API_KEY = os.environ.get('ONCOSERVE_API_KEY', '').strip()
+
+# Shared-credential demo gate (MammoAuthGate). Set both env vars on the server
+# to enable the demo; if either is missing, every gated route fails closed
+# with 503 rather than silently serving everyone.
+DEMO_USERNAME = os.environ.get('MAMMO_DEMO_USERNAME', '').strip() or None
+DEMO_PASSWORD = os.environ.get('MAMMO_DEMO_PASSWORD', '').strip() or None
+
+
+def _demo_unauthorized():
+    # Never set WWW-Authenticate here: that header makes the browser hijack
+    # the response with its own native credential popup instead of letting
+    # the app's own login modal show.
+    return jsonify({'error': True, 'msg': 'Invalid demo credentials.'}), 401
+
+
+def _check_demo_auth():
+    """Validates the shared Basic-auth credentials for the Mammo AI demo gate.
+    Returns None on success, or a Flask response tuple on failure.
+    """
+    if not (DEMO_USERNAME and DEMO_PASSWORD):
+        return jsonify({'error': True, 'msg': 'Demo auth is not configured.'}), 503
+
+    scheme, _, param = request.headers.get('Authorization', '').partition(' ')
+    if scheme.lower() != 'basic' or not param:
+        return _demo_unauthorized()
+
+    try:
+        decoded = base64.b64decode(param, validate=True).decode('utf-8')
+    except (binascii.Error, UnicodeDecodeError, ValueError):
+        return _demo_unauthorized()
+
+    username, sep, password = decoded.partition(':')
+    if not sep:
+        return _demo_unauthorized()
+
+    # Both comparisons always run: `and` short-circuiting on the username
+    # would leak, via response timing, whether the username alone was right.
+    ok_user = secrets.compare_digest(username.encode(), DEMO_USERNAME.encode())
+    ok_pass = secrets.compare_digest(password.encode(), DEMO_PASSWORD.encode())
+    if not (ok_user and ok_pass):
+        return _demo_unauthorized()
+
+    return None
 
 # Allow PORT environment override for local runs
 env_port = os.environ.get('PORT')
@@ -146,6 +191,18 @@ def ui():
                            version=app.config['ONCOSERVE_VERSION'])
 
 
+@app.route('/auth/verify', methods=['POST'])
+def auth_verify():
+    """Checks the demo credentials sent as HTTP Basic auth.
+    Used by the frontend's MammoAuthGate login screen; returns 200 on a
+    correct username/password, 401 on a wrong one, 503 if unconfigured.
+    """
+    auth = _check_demo_auth()
+    if auth:
+        return auth
+    return jsonify({'status': 'ok'}), HTTP_200_OK
+
+
 @app.after_request
 def disable_ui_cache(response):
     if request.path in ['/', '/ui']:
@@ -162,6 +219,9 @@ def list_remote_folders():
     """
     if not REMOTE_ENABLED:
         return jsonify({'error': True, 'msg': 'Remote access is disabled'}), 403
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
@@ -189,6 +249,9 @@ def preview_remote_folder():
     """
     if not REMOTE_ENABLED:
         return jsonify({'error': True, 'msg': 'Remote access is disabled'}), 403
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
@@ -258,6 +321,9 @@ def predict_remote():
 
     if not REMOTE_ENABLED:
         return jsonify({'error': True, 'msg': 'Remote access is disabled'}), 403
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
@@ -372,6 +438,9 @@ def predict_synthetic():
     Convenience endpoint for testing without manual file upload.
     """
     logger.info("Synthetic data prediction request received.")
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
@@ -462,6 +531,9 @@ def predict():
     Accepts 4 DICOM files posted as form fields: l_cc, l_mlo, r_cc, r_mlo.
     Returns JSON: { error, prediction: {year_1..year_5 as %}, msg }
     """
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
@@ -574,6 +646,9 @@ def serve():
     multipart field "dicom". Returns exam-level prediction JSON.
     '''
     logger.info("Serving /serve request...")
+    auth = _check_demo_auth()
+    if auth:
+        return auth
     auth = _check_api_key()
     if auth:
         return auth
