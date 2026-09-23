@@ -309,7 +309,7 @@ export function MammoLoginModal({
   brandSuffix = "-AI",
   title = "Private demo access",
   subtitle = "The Mammo AI analysis demo is invite-only while in preview. Enter the credentials from your invitation to continue.",
-  submitLabel = "Unlock demo",
+  submitLabel = "Sign in",
   verifyUrl = "/api/v1/auth/verify",
   logoSrc = null,
 }) {
