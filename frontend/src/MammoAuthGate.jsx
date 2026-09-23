@@ -312,6 +312,8 @@ export function MammoLoginModal({
   submitLabel = "Sign in",
   verifyUrl = "/api/v1/auth/verify",
   logoSrc = null,
+  requestAccessUrl = "https://oncotrace-ai.org/mammo-demo",
+  requestAccessLabel = "Request demo access",
 }) {
   const panelRef = useRef(null);
   const passwordRef = useRef(null);
@@ -619,6 +621,25 @@ export function MammoLoginModal({
           >
             You'll be asked to sign in again on every refresh. Nothing is saved to this device.
           </p>
+
+          {requestAccessUrl && (
+            <p
+              style={{
+                marginTop: 10, marginBottom: 0, textAlign: "center",
+                fontSize: 11, color: theme.textMuted, lineHeight: 1.6,
+              }}
+            >
+              If you don't have access —{' '}
+              <a
+                href={requestAccessUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: theme.accent, fontWeight: 600, textDecoration: "none" }}
+              >
+                {requestAccessLabel}
+              </a>
+            </p>
+          )}
         </div>
       </div>
     </div>
